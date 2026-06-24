@@ -165,6 +165,41 @@
             font-size: 13px;
         }
         .success-links a:hover { text-decoration: underline; }
+        .instructions {
+            margin-top: 24px;
+            padding: 16px;
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+        }
+        .instructions h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+        .instructions ol {
+            padding-left: 20px;
+            font-size: 12px;
+            color: #999;
+            line-height: 1.7;
+        }
+        .instructions ol li {
+            margin-bottom: 4px;
+        }
+        .instructions .server-url {
+            display: block;
+            margin-top: 12px;
+            padding: 8px 10px;
+            background: #0b0b0b;
+            border: 1px solid #333;
+            border-radius: 6px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 12px;
+            color: #00a4dc;
+            word-break: break-all;
+            user-select: all;
+        }
         .admin-link {
             display: block;
             text-align: center;
@@ -212,6 +247,17 @@
 
         <div id="message" class="message"></div>
 
+        <div class="instructions">
+            <h3>How to watch on your device</h3>
+            <ol>
+                <li>Download a Jellyfin client app for your device</li>
+                <li>Register or log in above</li>
+                <li>Open the app, go to settings, and enter the server URL below</li>
+                <li>Log in with your username and password, or use the Quick Connect code displayed on your screen</li>
+            </ol>
+            <span class="server-url">{{ jellyfin_url }}</span>
+        </div>
+
         <div class="admin-link">
             <a href="/admin">Admin</a>
         </div>
@@ -236,10 +282,10 @@
         const msg = document.getElementById('message');
 
         function showSuccess(data) {
-            // Hide tabs and forms
             document.getElementById('tabs').style.display = 'none';
             document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
             document.getElementById('page-subtitle').style.display = 'none';
+            document.querySelector('.instructions').style.display = 'none';
 
             msg.className = 'message success';
             let html = '<h1>' + data.message + '</h1>';
@@ -267,7 +313,6 @@
             msg.textContent = msg_text;
         }
 
-        // Register form
         document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('reg-btn');
@@ -300,7 +345,6 @@
             btn.textContent = 'Create Account';
         });
 
-        // Login form
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('login-btn');
@@ -332,7 +376,6 @@
             btn.textContent = 'Log In';
         });
 
-        // QC authorize
         async function authorizeQC() {
             const codeInput = document.getElementById('qc-code-input');
             const qcBtn = document.getElementById('qc-btn');
@@ -374,7 +417,6 @@
             qcBtn.textContent = 'Authorize';
         }
 
-        // Auto-uppercase + digits-only for QC input
         document.addEventListener('input', (e) => {
             if (e.target.id === 'qc-code-input') {
                 e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);

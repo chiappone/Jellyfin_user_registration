@@ -190,7 +190,8 @@ def get_public_url():
 
 @app.route("/")
 def index():
-    return render_template("register.html", server_name=load_settings().get("server_name", "Jellyfin"))
+    s = load_settings()
+    return render_template("register.html", server_name=s.get("server_name", "Jellyfin"), jellyfin_url=s.get("jellyfin_public_url") or s.get("jellyfin_url", ""))
 
 
 @app.route("/admin")
