@@ -1,0 +1,15 @@
+services:
+  jellyreg:
+    build: .
+    container_name: jellyreg
+    restart: unless-stopped
+    ports:
+      - "5050:5000"
+    environment:
+      - JELLYFIN_URL=http://192.168.69.210:8096
+      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
+      - ADMIN_PASSWORD_HASH=${ADMIN_PASSWORD_HASH}
+      - DEFAULT_LIBRARIES=${DEFAULT_LIBRARIES:-}
+      - DATA_DIR=/app/data
+    volumes:
+      - ./data:/app/data

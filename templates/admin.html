@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ settings.server_name }} Admin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0b0b0b;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .header {
+            background: #1a1a1a;
+            border-bottom: 1px solid #2a2a2a;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header h1 { font-size: 18px; font-weight: 600; }
+        .header a { color: #888; font-size: 13px; text-decoration: none; }
+        .header a:hover { color: #00a4dc; }
+        .container { max-width: 800px; margin: 0 auto; padding: 24px; }
+        h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #ccc; }
+
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Create invite form */
+        .create-row {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+        .create-row .field { flex: 1; min-width: 120px; }
+        .create-row label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 4px;
+        }
+        .create-row input, .create-row select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            background: #111;
+            color: #fff;
+            font-size: 13px;
+            outline: none;
+        }
+        .create-row input:focus, .create-row select:focus { border-color: #00a4dc; }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-primary { background: #00a4dc; color: #000; }
+        .btn-primary:hover { background: #00b6f0; }
+        .btn-danger { background: #7f1d1d; color: #f87171; font-size: 12px; padding: 4px 10px; }
+        .btn-danger:hover { background: #991b1b; }
+
+        /* Invite table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th {
+            text-align: left;
+            color: #888;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-bottom: 1px solid #2a2a2a;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #1f1f1f;
+        }
+        tr:hover { background: #1f1f1f; }
+        .code {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 13px;
+            color: #00a4dc;
+            cursor: pointer;
+        }
+        .code:hover { text-decoration: underline; }
+        .status { font-size: 12px; }
+        .status.active { color: #4ade80; }
+        .status.expired { color: #888; }
+        .status.used-up { color: #fbbf24; }
+        .empty { color: #555; font-style: italic; padding: 20px; text-align: center; }
+
+        /* Health badge */
+        .health {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .health.ok { background: #0a2e1a; color: #4ade80; }
+        .health.err { background: #2e0a0a; color: #f87171; }
+
+        /* Users list */
+        .user-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid #1f1f1f;
+            font-size: 13px;
+        }
+        .user-row:last-child { border-bottom: none; }
+        .user-meta { color: #888; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ settings.server_name }} Admin</h1>
+        <span id="health"><span class="health err">checking…</span></span>
+        <a href="#" onclick="logout(); return false;">Logout</a>
+    </div>
+
+    <div class="container">
+        <!-- Create invite -->
+        <div class="card">
+            <h2>Create Invite Code</h2>
+            <div class="create-row">
+                <div class="field">
+                    <label>Max Uses</label>
+                    <select id="max-uses">
+                        <option value="">Unlimited</option>
+                        <option value="1">1 use</option>
+                        <option value="5">5 uses</option>
+                        <option value="10">10 uses</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label>Expires In</label>
+                    <select id="expires">
+                        <option value="">Never</option>
+                        <option value="1">1 hour</option>
+                        <option value="24">24 hours</option>
+                        <option value="168">7 days</option>
+                        <option value="720">30 days</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" onclick="createInvite()">Generate Code</button>
+            </div>
+        </div>
+
+        <!-- Invite codes -->
+        <div class="card">
+            <h2>Invite Codes</h2>
+            <div id="invites-list"></div>
+        </div>
+
+        <!-- Registered users -->
+        <div class="card">
+            <h2>Registered Users</h2>
+            <div id="users-list"></div>
+        </div>
+    
+        <!-- Settings -->
+        <div class="card">
+            <h2>Settings</h2>
+            <div class="create-row" style="flex-direction: column; gap: 12px; align-items: stretch;">
+                <div class="field">
+                    <label>Server Name</label>
+                    <input type="text" id="setting-name" value="{{ settings.server_name }}" placeholder="My Jellyfin Server">
+                </div>
+                <div class="field">
+                    <label>Jellyfin Internal URL</label>
+                    <input type="text" id="setting-url" value="{{ settings.jellyfin_url }}" placeholder="http://jellyfin:8096">
+                    <span style="font-size:11px;color:#666;">URL used by the backend to talk to Jellyfin</span>
+                </div>
+                <div class="field">
+                    <label>Jellyfin Public URL</label>
+                    <input type="text" id="setting-public-url" value="{{ settings.jellyfin_public_url }}" placeholder="https://my-server.duckdns.org">
+                    <span style="font-size:11px;color:#666;">URL shown to users after registration (leave blank to use internal URL)</span>
+                </div>
+                <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+            </div>
+        </div>
+</div>
+
+    <script>
+        let invites = {{ invites | tojson }};
+        let users = {{ users | tojson }};
+
+        async function checkHealth() {
+            try {
+                const r = await fetch('/api/admin/health');
+                const d = await r.json();
+                document.getElementById('health').innerHTML =
+                    `<span class="health ${d.ok ? 'ok' : 'err'}">${d.ok ? d.jellyfin : 'offline'}</span>`;
+            } catch {
+                document.getElementById('health').innerHTML = '<span class="health err">offline</span>';
+            }
+        }
+
+        function fmtDate(ts) {
+            return new Date(ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function copyCode(code) {
+            navigator.clipboard.writeText(code);
+        }
+
+        function renderInvites() {
+            const el = document.getElementById('invites-list');
+            if (Object.keys(invites).length === 0) {
+                el.innerHTML = '<div class="empty">No invite codes yet</div>';
+                return;
+            }
+            let html = '<table><thead><tr><th>Code</th><th>Status</th><th>Uses</th><th>Created</th><th></th></tr></thead><tbody>';
+            const sorted = Object.entries(invites).sort((a, b) => b[1].created_at - a[1].created_at);
+            for (const [code, inv] of sorted) {
+                const expired = inv.expires && inv.expires < Date.now() / 1000;
+                const usedUp = inv.max_uses && inv.used >= inv.max_uses;
+                let status = 'active';
+                if (expired) status = 'expired';
+                else if (usedUp) status = 'used-up';
+                html += `<tr>
+                    <td><span class="code" title="Click to copy" onclick="copyCode('${code}')">${code}</span></td>
+                    <td><span class="status ${status}">${status}</span></td>
+                    <td>${inv.used}${inv.max_uses ? '/' + inv.max_uses : '/∞'}</td>
+                    <td>${fmtDate(inv.created_at)}</td>
+                    <td><button class="btn btn-danger" onclick="deleteInvite('${code}')">Delete</button></td>
+                </tr>`;
+            }
+            html += '</tbody></table>';
+            el.innerHTML = html;
+        }
+
+        function renderUsers() {
+            const el = document.getElementById('users-list');
+            if (users.length === 0) {
+                el.innerHTML = '<div class="empty">No users registered yet</div>';
+                return;
+            }
+            let html = '';
+            const sorted = [...users].sort((a, b) => b.registered_at - a.registered_at);
+            for (const u of sorted) {
+                html += `<div class="user-row">
+                    <span>${u.username}</span>
+                    <span class="user-meta">${fmtDate(u.registered_at)}</span>
+                </div>`;
+            }
+            el.innerHTML = html;
+        }
+
+        async function createInvite() {
+            const maxUses = document.getElementById('max-uses').value || null;
+            const expires = document.getElementById('expires').value || null;
+            const res = await fetch('/api/admin/invite', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ max_uses: maxUses ? parseInt(maxUses) : null, expires_hours: expires ? parseInt(expires) : null }),
+            });
+            const data = await res.json();
+            if (data.ok) {
+                invites[data.invite.code] = data.invite;
+                renderInvites();
+                // Auto-copy the new code
+                navigator.clipboard.writeText(data.invite.code);
+            }
+        }
+
+        async function deleteInvite(code) {
+            await fetch(`/api/admin/invite/${code}`, { method: 'DELETE' });
+            delete invites[code];
+            renderInvites();
+        }
+
+        async function logout() {
+            await fetch('/api/admin/logout', { method: 'POST' });
+            window.location.href = '/admin/login';
+        }
+
+        // Auto-refresh invites every 30s
+        async function refreshData() {
+            try {
+                const r = await fetch('/admin');
+                const text = await r.text();
+                // Parse invites/users from the re-rendered page? No — just re-fetch health
+            } catch {}
+        }
+
+        async function saveSettings() {
+            const res = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    server_name: document.getElementById('setting-name').value || 'Jellyfin',
+                    jellyfin_url: document.getElementById('setting-url').value,
+                    jellyfin_public_url: document.getElementById('setting-public-url').value,
+                }),
+            });
+            const data = await res.json();
+            if (data.ok) checkHealth();
+        }
+
+        checkHealth();
+        renderInvites();
+        renderUsers();
+    </script>
+</body>
+</html>

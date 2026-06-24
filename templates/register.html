@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join {{ server_name }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0b0b0b;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 400px;
+            margin: 20px;
+        }
+        h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+        p.subtitle {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 28px;
+        }
+        .tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 24px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+            color: #888;
+            background: #111;
+            cursor: pointer;
+            border: none;
+            transition: background 0.2s, color 0.2s;
+        }
+        .tab:hover { color: #ccc; }
+        .tab.active {
+            background: #00a4dc;
+            color: #000;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #aaa;
+            margin-bottom: 6px;
+        }
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #111;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus { border-color: #00a4dc; }
+        button.submit-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #00a4dc;
+            color: #000;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button.submit-btn:hover { background: #00b6f0; }
+        button.submit-btn:disabled { background: #444; color: #777; cursor: not-allowed; }
+        .form-panel { display: none; }
+        .form-panel.active { display: block; }
+        .message {
+            margin-top: 16px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: none;
+        }
+        .message.success { display: block; background: #0a2e1a; border: 1px solid #166534; color: #4ade80; }
+        .message.error { display: block; background: #2e0a0a; border: 1px solid #7f1d1d; color: #f87171; }
+        .message.success h1 {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+        .message.success a { color: #00a4dc; text-decoration: underline; }
+        .qc-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #2a2a2a;
+            display: none;
+        }
+        .qc-section.visible { display: block; }
+        .qc-section h3 {
+            font-size: 15px;
+            font-weight: 500;
+            color: #ccc;
+            margin-bottom: 4px;
+        }
+        .qc-section p {
+            font-size: 12px;
+            color: #777;
+            margin-bottom: 14px;
+        }
+        .qc-row {
+            display: flex;
+            gap: 8px;
+        }
+        .qc-row input {
+            margin-bottom: 0;
+            flex: 1;
+            font-size: 20px;
+            text-align: center;
+            letter-spacing: 4px;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+        }
+        .qc-row button {
+            width: auto;
+            min-width: 80px;
+            margin-bottom: 0;
+        }
+        .qc-result {
+            margin-top: 10px;
+            font-size: 13px;
+            display: none;
+        }
+        .qc-result.visible { display: block; }
+        .qc-result.ok { color: #4ade80; }
+        .qc-result.err { color: #f87171; }
+        .success-links {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .success-links a {
+            color: #00a4dc;
+            text-decoration: none;
+            font-size: 13px;
+        }
+        .success-links a:hover { text-decoration: underline; }
+        .admin-link {
+            display: block;
+            text-align: center;
+            margin-top: 24px;
+            font-size: 12px;
+            color: #555;
+        }
+        .admin-link a { color: #555; text-decoration: none; }
+        .admin-link a:hover { color: #00a4dc; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Join {{ server_name }}</h1>
+        <p class="subtitle" id="page-subtitle">Create an account to start streaming</p>
+
+        <div class="tabs" id="tabs">
+            <button class="tab active" onclick="switchTab('register')">Register</button>
+            <button class="tab" onclick="switchTab('login')">Log In</button>
+        </div>
+
+        <!-- Register form -->
+        <div class="form-panel active" id="register-panel">
+            <form id="register-form">
+                <label for="reg-username">Username</label>
+                <input type="text" id="reg-username" placeholder="Pick a username" autocomplete="off" required>
+                <label for="reg-password">Password</label>
+                <input type="password" id="reg-password" placeholder="Choose a password" required>
+                <label for="reg-invite">Invite Code</label>
+                <input type="text" id="reg-invite" placeholder="Enter your invite code" autocomplete="off" required>
+                <button type="submit" class="submit-btn" id="reg-btn">Create Account</button>
+            </form>
+        </div>
+
+        <!-- Login form -->
+        <div class="form-panel" id="login-panel">
+            <form id="login-form">
+                <label for="login-username">Username</label>
+                <input type="text" id="login-username" placeholder="Your username" autocomplete="off" required>
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" placeholder="Your password" required>
+                <button type="submit" class="submit-btn" id="login-btn">Log In</button>
+            </form>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <div class="admin-link">
+            <a href="/admin">Admin</a>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+
+            if (tab === 'register') {
+                document.querySelector('#tabs .tab:first-child').classList.add('active');
+                document.getElementById('register-panel').classList.add('active');
+                document.getElementById('page-subtitle').textContent = 'Create an account to start streaming';
+            } else {
+                document.querySelector('#tabs .tab:last-child').classList.add('active');
+                document.getElementById('login-panel').classList.add('active');
+                document.getElementById('page-subtitle').textContent = 'Log in to connect a device';
+            }
+        }
+
+        const msg = document.getElementById('message');
+
+        function showSuccess(data) {
+            // Hide tabs and forms
+            document.getElementById('tabs').style.display = 'none';
+            document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-subtitle').style.display = 'none';
+
+            msg.className = 'message success';
+            let html = '<h1>' + data.message + '</h1>';
+            html += '<div class="success-links">';
+            html += '<a href="' + data.jellyfin_url + '">Open Jellyfin &rarr;</a>';
+            html += '</div>';
+
+            if (data.qc_enabled) {
+                html += '<div class="qc-section visible" id="qc-section">';
+                html += '<h3>Connect a device</h3>';
+                html += '<p>Enter the 6-digit code from your TV or app to log it in.</p>';
+                html += '<div class="qc-row">';
+                html += '<input type="text" id="qc-code-input" maxlength="6" placeholder="000000" autocomplete="off">';
+                html += '<button id="qc-btn" onclick="authorizeQC()">Authorize</button>';
+                html += '</div>';
+                html += '<div class="qc-result" id="qc-result"></div>';
+                html += '</div>';
+            }
+
+            msg.innerHTML = html;
+        }
+
+        function showError(msg_text) {
+            msg.className = 'message error';
+            msg.textContent = msg_text;
+        }
+
+        // Register form
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('reg-btn');
+            btn.disabled = true;
+            btn.textContent = 'Creating\u2026';
+            msg.className = 'message';
+            msg.textContent = '';
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('reg-username').value,
+                        password: document.getElementById('reg-password').value,
+                        invite_code: document.getElementById('reg-invite').value.trim().toUpperCase(),
+                    }),
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showSuccess(data);
+                } else {
+                    showError(data.error || 'Something went wrong');
+                }
+            } catch {
+                showError('Network error \u2014 try again');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Create Account';
+        });
+
+        // Login form
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn');
+            btn.disabled = true;
+            btn.textContent = 'Logging in\u2026';
+            msg.className = 'message';
+            msg.textContent = '';
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('login-username').value,
+                        password: document.getElementById('login-password').value,
+                    }),
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    showSuccess(data);
+                } else {
+                    showError(data.error || 'Invalid credentials');
+                }
+            } catch {
+                showError('Network error \u2014 try again');
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Log In';
+        });
+
+        // QC authorize
+        async function authorizeQC() {
+            const codeInput = document.getElementById('qc-code-input');
+            const qcBtn = document.getElementById('qc-btn');
+            const qcResult = document.getElementById('qc-result');
+
+            const code = codeInput.value.trim();
+            if (code.length !== 6 || !/\d{6}/.test(code)) {
+                qcResult.className = 'qc-result visible err';
+                qcResult.textContent = 'Enter a valid 6-digit code';
+                return;
+            }
+
+            qcBtn.disabled = true;
+            qcBtn.textContent = 'Checking\u2026';
+            qcResult.className = 'qc-result';
+
+            try {
+                const res = await fetch('/api/qc/authorize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code }),
+                });
+                const data = await res.json();
+
+                if (data.ok) {
+                    qcResult.className = 'qc-result visible ok';
+                    qcResult.textContent = data.message;
+                    codeInput.value = '';
+                } else {
+                    qcResult.className = 'qc-result visible err';
+                    qcResult.textContent = data.error || 'Authorization failed';
+                }
+            } catch {
+                qcResult.className = 'qc-result visible err';
+                qcResult.textContent = 'Network error';
+            }
+
+            qcBtn.disabled = false;
+            qcBtn.textContent = 'Authorize';
+        }
+
+        // Auto-uppercase + digits-only for QC input
+        document.addEventListener('input', (e) => {
+            if (e.target.id === 'qc-code-input') {
+                e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+            }
+        });
+    </script>
+</body>
+</html>
